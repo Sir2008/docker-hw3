@@ -1,0 +1,284 @@
+Проверено: 2026-11-18T20:41:08.541042+03:00
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml config --quiet
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml up -d --build --wait --wait-timeout 120
+#1 [internal] load local bake definitions
+#1 reading from stdin 634B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 311B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.13-alpine
+#3 DONE 0.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 95B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 94B done
+#5 DONE 0.0s
+
+#6 resolving provenance for metadata file
+#6 DONE 0.0s
+
+#7 [1/5] FROM docker.io/library/python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+#7 resolve docker.io/library/python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e done
+#7 DONE 0.0s
+
+#8 [2/5] WORKDIR /app
+#8 CACHED
+
+#9 [4/5] RUN pip install --no-cache-dir -r requirements.txt
+#9 CACHED
+
+#10 [3/5] COPY app/requirements.txt ./requirements.txt
+#10 CACHED
+
+#11 [5/5] COPY app/app.py ./app.py
+#11 CACHED
+
+#12 exporting to image
+#12 exporting layers done
+#12 exporting manifest sha256:022caecf8f95735e3152d3eb47d8e1ce3065f308cc834c00c4dbc4456f76e295 done
+#12 exporting config sha256:2105e11b9063b0bda4ceb3cbe29bb8baa81f6a621dc7d1ff06e1f4a8a93fff3a done
+#12 exporting attestation manifest sha256:7203bd615ada70f63816878b2a462b87b2ae9de5e4b7417cb0b28b3a903a23d2 done
+#12 exporting manifest list sha256:7be4a3ad6133b159fe7cd06d16315b8f8551013604374ad143ba7c731e5216c6 done
+#12 naming to docker.io/library/hw3-check-1795023455-level8-app:latest done
+#12 unpacking to docker.io/library/hw3-check-1795023455-level8-app:latest done
+#12 DONE 0.0s
+ Image hw3-check-1795023455-level8-app Building
+ Image hw3-check-1795023455-level8-app Built
+ Network hw3-check-1795023455-level8_default Creating
+ Network hw3-check-1795023455-level8_default Creating
+ Volume hw3-check-1795023455-level8_redis-data Creating
+ Volume hw3-check-1795023455-level8_redis-data Creating
+ Volume hw3-check-1795023455-level8_redis-data Created
+ Volume hw3-check-1795023455-level8_redis-data Created
+ Network hw3-check-1795023455-level8_default Created
+ Network hw3-check-1795023455-level8_default Created
+ Container hw3-check-1795023455-level8-redis-1 Creating
+ Container hw3-check-1795023455-level8-redis-1 Created
+ Container hw3-check-1795023455-level8-app-1 Creating
+ Container hw3-check-1795023455-level8-app-1 Created
+ Container hw3-check-1795023455-level8-redis-1 Starting
+ Container hw3-check-1795023455-level8-redis-1 Started
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Starting
+ Container hw3-check-1795023455-level8-app-1 Started
+ Container hw3-check-1795023455-level8-app-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Healthy
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 0, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+$ curl --max-time 5 -sS -X POST -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 1, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+$ curl --max-time 5 -sS -X POST -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 2, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+$ curl --max-time 5 -sS -X POST -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps -q app
+b5308491745eaf60c7a09ab7ce245cc61be4f402255264d46f382502f9d6b007
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps
+NAME                                  IMAGE                             COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+hw3-check-1795023455-level8-app-1     hw3-check-1795023455-level8-app   "python app.py"          app       11 seconds ago   Up 5 seconds (healthy)    0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp
+hw3-check-1795023455-level8-redis-1   redis:7.4-alpine                  "docker-entrypoint.s…"   redis     11 seconds ago   Up 10 seconds (healthy)   6379/tcp
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps -q redis
+73616977fd12f2583b11f0aa6c3b903925fab9dabb64de9c09db502033028ba1
+$ docker inspect --format '{{json .HostConfig.PortBindings}}' 73616977fd12f2583b11f0aa6c3b903925fab9dabb64de9c09db502033028ba1
+{}
+$ docker inspect --format '{{json .Mounts}}' 73616977fd12f2583b11f0aa6c3b903925fab9dabb64de9c09db502033028ba1
+[{"Type":"volume","Name":"hw3-check-1795023455-level8_redis-data","Source":"/var/lib/docker/volumes/hw3-check-1795023455-level8_redis-data/_data","Destination":"/data","Driver":"local","Mode":"rw","RW":true,"Propagation":""}]
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml exec -T redis redis-cli CONFIG GET appendonly
+appendonly
+yes
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml down
+ Container hw3-check-1795023455-level8-app-1 Stopping
+ Container hw3-check-1795023455-level8-app-1 Stopped
+ Container hw3-check-1795023455-level8-app-1 Removing
+ Container hw3-check-1795023455-level8-app-1 Removed
+ Container hw3-check-1795023455-level8-redis-1 Stopping
+ Container hw3-check-1795023455-level8-redis-1 Stopped
+ Container hw3-check-1795023455-level8-redis-1 Removing
+ Container hw3-check-1795023455-level8-redis-1 Removed
+ Network hw3-check-1795023455-level8_default Removing
+ Network hw3-check-1795023455-level8_default Removed
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml up -d --wait --wait-timeout 120
+ Network hw3-check-1795023455-level8_default Creating
+ Network hw3-check-1795023455-level8_default Creating
+ Network hw3-check-1795023455-level8_default Created
+ Network hw3-check-1795023455-level8_default Created
+ Container hw3-check-1795023455-level8-redis-1 Creating
+ Container hw3-check-1795023455-level8-redis-1 Created
+ Container hw3-check-1795023455-level8-app-1 Creating
+ Container hw3-check-1795023455-level8-app-1 Created
+ Container hw3-check-1795023455-level8-redis-1 Starting
+ Container hw3-check-1795023455-level8-redis-1 Started
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Starting
+ Container hw3-check-1795023455-level8-app-1 Started
+ Container hw3-check-1795023455-level8-app-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Healthy
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps -q app
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+PASS: после удаления контейнеров и повторного запуска count = 3.
+$ docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Health.Status}} {{.State.StartedAt}} {{.RestartCount}}' a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d running healthy 2026-11-18T17:41:35.797251816Z 0
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml stop redis
+ Container hw3-check-1795023455-level8-redis-1 Stopping
+ Container hw3-check-1795023455-level8-redis-1 Stopped
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/healthz
+{"status": "alive"}
+HTTP 200
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/readyz
+{"error": "storage_unavailable"}
+HTTP 503
+$ curl --max-time 5 -sS -X POST -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/increment
+{"error": "storage_unavailable"}
+HTTP 503
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/
+{"error": "storage_unavailable"}
+HTTP 503
+$ docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Health.Status}} {{.State.StartedAt}} {{.RestartCount}}' a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d running unhealthy 2026-11-18T17:41:35.797251816Z 0
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml start --wait --wait-timeout 120 redis
+ Container hw3-check-1795023455-level8-redis-1 Starting
+ Container hw3-check-1795023455-level8-redis-1 Started
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+$ curl --max-time 5 -sS -X GET -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+$ curl --max-time 5 -sS -X POST -w '
+HTTP %{http_code}
+' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 4, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+$ docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Health.Status}} {{.State.StartedAt}} {{.RestartCount}}' a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d running healthy 2026-11-18T17:41:35.797251816Z 0
+PASS: контейнер app, время запуска и RestartCount не изменились; count: 3 -> 4.
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps
+NAME                                  IMAGE                             COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+hw3-check-1795023455-level8-app-1     hw3-check-1795023455-level8-app   "python app.py"          app       26 seconds ago   Up 20 seconds (healthy)   0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp
+hw3-check-1795023455-level8-redis-1   redis:7.4-alpine                  "docker-entrypoint.s…"   redis     26 seconds ago   Up 5 seconds (healthy)    6379/tcp
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml logs --no-color
+redis-1  | 1:C 18 Nov 2026 17:41:30.756 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+app-1    | 2026-11-18 17:41:36,114 listening port=8000 storage=redis
+app-1    | 2026-11-18 17:41:41,014 http 127.0.0.1 "GET /readyz HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:41,403 http 172.18.0.1 "GET /readyz HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:41,463 http 172.18.0.1 "GET / HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:41,636 http 172.18.0.1 "GET /healthz HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:41,794 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:41,794 http 172.18.0.1 "GET /readyz HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:41,811 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:41,811 http 172.18.0.1 "POST /increment HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:41,824 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:41,824 http 172.18.0.1 "GET / HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:44,176 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:44,176 http 127.0.0.1 "GET /readyz HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:47,262 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:47,262 http 127.0.0.1 "GET /readyz HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:50,450 storage_unavailable: ConnectionError
+app-1    | 2026-11-18 17:41:50,450 http 127.0.0.1 "GET /readyz HTTP/1.1" 503 -
+app-1    | 2026-11-18 17:41:53,626 http 127.0.0.1 "GET /readyz HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:56,148 http 172.18.0.1 "GET /readyz HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:56,173 http 172.18.0.1 "GET / HTTP/1.1" 200 -
+app-1    | 2026-11-18 17:41:56,181 http 172.18.0.1 "POST /increment HTTP/1.1" 200 -
+redis-1  | 1:C 18 Nov 2026 17:41:30.757 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+redis-1  | 1:C 18 Nov 2026 17:41:30.757 * Redis version=7.4.12, bits=64, commit=00000000, modified=0, pid=1, just started
+redis-1  | 1:C 18 Nov 2026 17:41:30.757 * Configuration loaded
+redis-1  | 1:M 18 Nov 2026 17:41:30.757 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+redis-1  | 1:M 18 Nov 2026 17:41:30.757 * monotonic clock: POSIX clock_gettime
+redis-1  | 1:M 18 Nov 2026 17:41:30.757 * Running mode=standalone, port=6379.
+redis-1  | 1:M 18 Nov 2026 17:41:30.757 * Server initialized
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * Reading RDB base file on AOF loading...
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * Loading RDB produced by version 7.4.12
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * RDB age 21 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * RDB memory usage when created 0.94 Mb
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * RDB is base AOF
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * Done loading RDB, keys loaded: 0, keys expired: 0.
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * DB loaded from base file appendonly.aof.1.base.rdb: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * DB loaded from incr file appendonly.aof.1.incr.aof: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * DB loaded from append only file: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * Opening AOF incr file appendonly.aof.1.incr.aof on server start
+redis-1  | 1:M 18 Nov 2026 17:41:30.758 * Ready to accept connections tcp
+redis-1  | 1:signal-handler (1795023701) Received SIGTERM scheduling shutdown...
+redis-1  | 1:M 18 Nov 2026 17:41:41.576 * User requested shutdown...
+redis-1  | 1:M 18 Nov 2026 17:41:41.576 * Calling fsync() on the AOF file.
+redis-1  | 1:M 18 Nov 2026 17:41:41.576 * Saving the final RDB snapshot before exiting.
+redis-1  | 1:M 18 Nov 2026 17:41:41.577 * DB saved on disk
+redis-1  | 1:M 18 Nov 2026 17:41:41.577 # Redis is now ready to exit, bye bye...
+redis-1  | 1:C 18 Nov 2026 17:41:51.202 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+redis-1  | 1:C 18 Nov 2026 17:41:51.202 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+redis-1  | 1:C 18 Nov 2026 17:41:51.202 * Redis version=7.4.12, bits=64, commit=00000000, modified=0, pid=1, just started
+redis-1  | 1:C 18 Nov 2026 17:41:51.202 * Configuration loaded
+redis-1  | 1:M 18 Nov 2026 17:41:51.202 * Increased maximum number of open files to 10032 (it was originally set to 1024).
+redis-1  | 1:M 18 Nov 2026 17:41:51.202 * monotonic clock: POSIX clock_gettime
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Running mode=standalone, port=6379.
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Server initialized
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Reading RDB base file on AOF loading...
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Loading RDB produced by version 7.4.12
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * RDB age 42 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * RDB memory usage when created 0.94 Mb
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * RDB is base AOF
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Done loading RDB, keys loaded: 0, keys expired: 0.
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * DB loaded from base file appendonly.aof.1.base.rdb: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * DB loaded from incr file appendonly.aof.1.incr.aof: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * DB loaded from append only file: 0.000 seconds
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Opening AOF incr file appendonly.aof.1.incr.aof on server start
+redis-1  | 1:M 18 Nov 2026 17:41:51.203 * Ready to accept connections tcp
+
+Очистка только этого тестового проекта после завершения эксперимента:
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml down -v
+ Container hw3-check-1795023455-level8-app-1 Stopping
+ Container hw3-check-1795023455-level8-app-1 Stopped
+ Container hw3-check-1795023455-level8-app-1 Removing
+ Container hw3-check-1795023455-level8-app-1 Removed
+ Container hw3-check-1795023455-level8-redis-1 Stopping
+ Container hw3-check-1795023455-level8-redis-1 Stopped
+ Container hw3-check-1795023455-level8-redis-1 Removing
+ Container hw3-check-1795023455-level8-redis-1 Removed
+ Volume hw3-check-1795023455-level8_redis-data Removing
+ Network hw3-check-1795023455-level8_default Removing
+ Volume hw3-check-1795023455-level8_redis-data Removed
+ Network hw3-check-1795023455-level8_default Removed
+
+PASS: все проверки этого этапа пройдены.
