@@ -1,122 +1,210 @@
-# ДЗ 3: Docker — 8 баллов
-
-Упаковка готового HTTP-сервиса со счётчиком. Выполнены уровни 4, 6 и 8
-из [условия](https://github.com/Nikfilk2030/missing_semester_hse_cs/blob/main/2026/amcs/year_1/hw_3/README.md).
-Исходные файлы в `app/` взяты из
-[шаблона](https://github.com/null-ref-exc/hw_3_template) и не изменены.
-
-Для запуска нужны Docker с Docker Compose и `curl`. На macOS для запуска
-Docker Engine можно использовать Docker Desktop или Colima (`colima start`).
-Все команды ниже выполняются из корня репозитория.
-
-## Основной запуск: приложение и Redis (8 баллов)
+# Docker
 
 ```sh
 cp .env.example .env
-docker compose -p hw3-redis up -d --build --wait --wait-timeout 120
-curl --max-time 5 -fsS http://127.0.0.1:8080/
-curl --max-time 5 -fsS -X POST http://127.0.0.1:8080/increment
-docker compose -p hw3-redis ps
 ```
 
-В `.env` настраиваются:
-
-| Переменная | По умолчанию | Назначение |
-| --- | --- | --- |
-| `HOST_PORT` | `8080` | Порт приложения на компьютере |
-| `GREETING` | `Привет, Docker!` | Приветствие в JSON-ответе |
-
-После изменения `.env` повторите команду `up -d`. Если изменён `HOST_PORT`,
-подставьте его вместо `8080` в запросах `curl`.
-
-В `compose.yaml` два сервиса:
-
-- `app` собирается из `Dockerfile` и слушает порт `8000` внутри контейнера.
-  Использует `STORAGE=redis` и `REDIS_URL=redis://redis:6379/0`.
-- `redis` доступен приложению по имени сервиса в сети Compose. Его порт
-  не публикуется на компьютере. Именованный volume `redis-data` подключён
-  к `/data`; запись AOF включена через `--appendonly yes`.
-
-У обоих сервисов есть healthcheck. Приложение запускается после готовности
-Redis. Проверка приложения обращается к `/readyz`, поэтому при остановке
-Redis контейнер приложения становится `unhealthy`, но HTTP-сервер продолжает работать.
-
-### Сохранение счётчика
-
-```sh
-curl --max-time 5 -fsS -X POST http://127.0.0.1:8080/increment
-curl --max-time 5 -fsS http://127.0.0.1:8080/
-# Запомните count как N.
-docker compose -p hw3-redis down
-docker compose -p hw3-redis up -d --wait --wait-timeout 120
-curl --max-time 5 -fsS http://127.0.0.1:8080/
-# count должен остаться равным N.
+```dotenv
+HOST_PORT=8080
+GREETING="Привет, Docker!"
 ```
 
-`down` удаляет контейнеры и сеть, сохраняя именованный volume.
-Не добавляйте `-v` при проверке сохранения данных: этот флаг удаляет volume.
+## 4 балла
 
-### Отключение и возвращение Redis
+```console
+$ docker build -t ipr-hw3:local .
+...
+#10 unpacking to docker.io/library/ipr-hw3:local 0.0s done
+#10 DONE 0.1s
 
-```sh
-docker compose -p hw3-redis stop redis
-curl --max-time 5 -sS -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/healthz
-curl --max-time 5 -sS -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/readyz
-curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
-docker compose -p hw3-redis start --wait --wait-timeout 120 redis
-curl --max-time 5 -fsS http://127.0.0.1:8080/readyz
-curl --max-time 5 -fsS http://127.0.0.1:8080/
-curl --max-time 5 -fsS -X POST http://127.0.0.1:8080/increment
+$ docker run -d --name hw3-single-check-1795023455 -p 8082:8000 -e 'GREETING=Привет из одного контейнера!' ipr-hw3:local
+46f04e9fcf569fc1bff823a8c68b2915aaf4bb15bc1e021be73b6146ce001e1a
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8082/
+{"greeting": "Привет из одного контейнера!", "count": 0, "hostname": "46f04e9fcf56", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8082/increment
+{"greeting": "Привет из одного контейнера!", "count": 1, "hostname": "46f04e9fcf56", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8082/increment
+{"greeting": "Привет из одного контейнера!", "count": 2, "hostname": "46f04e9fcf56", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8082/
+{"greeting": "Привет из одного контейнера!", "count": 2, "hostname": "46f04e9fcf56", "storage": "sqlite"}
+HTTP 200
+
+$ docker logs hw3-single-check-1795023455
+2026-11-18 17:40:35,399 listening port=8000 storage=sqlite
+2026-11-18 17:40:35,689 http 172.17.0.1 "GET /readyz HTTP/1.1" 200 -
+2026-11-18 17:40:35,702 http 172.17.0.1 "GET / HTTP/1.1" 200 -
+2026-11-18 17:40:35,719 http 172.17.0.1 "POST /increment HTTP/1.1" 200 -
+2026-11-18 17:40:35,729 http 172.17.0.1 "POST /increment HTTP/1.1" 200 -
+2026-11-18 17:40:35,737 http 172.17.0.1 "GET / HTTP/1.1" 200 -
+
+$ docker rm -f hw3-single-check-1795023455
+hw3-single-check-1795023455
 ```
 
-При остановленном Redis ожидаются коды `200`, `503`, `503` соответственно.
-После возвращения Redis `GET /` возвращает прежний `N`, следующий POST — `N + 1`.
-Перезапускать приложение не требуется.
+## 6 баллов
 
-Обычная остановка с сохранением данных:
+```console
+$ HOST_PORT=8081 GREETING='Привет из SQLite!' docker compose -p hw3-check-1795023455-level6 -f compose.sqlite.yaml up -d --build --wait --wait-timeout 120
+...
+ Container hw3-check-1795023455-level6-app-1 Waiting
+ Container hw3-check-1795023455-level6-app-1 Healthy
 
-```sh
-docker compose -p hw3-redis down
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8081/
+{"greeting": "Привет из SQLite!", "count": 0, "hostname": "416c5930dec9", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8081/increment
+{"greeting": "Привет из SQLite!", "count": 1, "hostname": "416c5930dec9", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8081/increment
+{"greeting": "Привет из SQLite!", "count": 2, "hostname": "416c5930dec9", "storage": "sqlite"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8081/increment
+{"greeting": "Привет из SQLite!", "count": 3, "hostname": "416c5930dec9", "storage": "sqlite"}
+HTTP 200
+
+$ docker inspect --format '{{json .Mounts}}' 416c5930dec945bfa9422c8bb2bd140bdd7d3793bec4b4f7f00186b62ce874f2
+[{"Type":"volume","Name":"hw3-check-1795023455-level6_sqlite-data","Source":"/var/lib/docker/volumes/hw3-check-1795023455-level6_sqlite-data/_data","Destination":"/data","Driver":"local","Mode":"rw","RW":true,"Propagation":""}]
+
+$ HOST_PORT=8081 GREETING='Привет из SQLite!' docker compose -p hw3-check-1795023455-level6 -f compose.sqlite.yaml down
+ Container hw3-check-1795023455-level6-app-1 Stopping
+ Container hw3-check-1795023455-level6-app-1 Stopped
+ Container hw3-check-1795023455-level6-app-1 Removing
+ Container hw3-check-1795023455-level6-app-1 Removed
+ Network hw3-check-1795023455-level6_default Removing
+ Network hw3-check-1795023455-level6_default Removed
+
+$ HOST_PORT=8081 GREETING='Привет из SQLite!' docker compose -p hw3-check-1795023455-level6 -f compose.sqlite.yaml up -d --wait --wait-timeout 120
+ Network hw3-check-1795023455-level6_default Creating
+ Network hw3-check-1795023455-level6_default Creating
+ Network hw3-check-1795023455-level6_default Created
+ Network hw3-check-1795023455-level6_default Created
+ Container hw3-check-1795023455-level6-app-1 Creating
+ Container hw3-check-1795023455-level6-app-1 Created
+ Container hw3-check-1795023455-level6-app-1 Starting
+ Container hw3-check-1795023455-level6-app-1 Started
+ Container hw3-check-1795023455-level6-app-1 Waiting
+ Container hw3-check-1795023455-level6-app-1 Healthy
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8081/
+{"greeting": "Привет из SQLite!", "count": 3, "hostname": "c8d0a1c18350", "storage": "sqlite"}
+HTTP 200
 ```
 
-## Один контейнер (4 балла)
+## 8 баллов
 
-```sh
-docker build -t ipr-hw3:local .
-docker run -d --name hw3-single -p 8082:8000 \
-  -e GREETING='Привет из одного контейнера!' ipr-hw3:local
-docker logs hw3-single
-# После появления строки listening сервер готов.
-curl --max-time 5 -fsS http://127.0.0.1:8082/
-curl --max-time 5 -fsS -X POST http://127.0.0.1:8082/increment
-docker logs hw3-single
-docker rm -f hw3-single
+```console
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml up -d --build --wait --wait-timeout 120
+...
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Healthy
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 0, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 1, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 2, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "b5308491745e", "storage": "redis"}
+HTTP 200
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml ps
+NAME                                  IMAGE                             COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+hw3-check-1795023455-level8-app-1     hw3-check-1795023455-level8-app   "python app.py"          app       11 seconds ago   Up 5 seconds (healthy)    0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp
+hw3-check-1795023455-level8-redis-1   redis:7.4-alpine                  "docker-entrypoint.s…"   redis     11 seconds ago   Up 10 seconds (healthy)   6379/tcp
+
+$ docker inspect --format '{{json .HostConfig.PortBindings}}' 73616977fd12f2583b11f0aa6c3b903925fab9dabb64de9c09db502033028ba1
+{}
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml exec -T redis redis-cli CONFIG GET appendonly
+appendonly
+yes
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml down
+ Container hw3-check-1795023455-level8-app-1 Stopping
+ Container hw3-check-1795023455-level8-app-1 Stopped
+ Container hw3-check-1795023455-level8-app-1 Removing
+ Container hw3-check-1795023455-level8-app-1 Removed
+ Container hw3-check-1795023455-level8-redis-1 Stopping
+ Container hw3-check-1795023455-level8-redis-1 Stopped
+ Container hw3-check-1795023455-level8-redis-1 Removing
+ Container hw3-check-1795023455-level8-redis-1 Removed
+ Network hw3-check-1795023455-level8_default Removing
+ Network hw3-check-1795023455-level8_default Removed
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml up -d --wait --wait-timeout 120
+ Network hw3-check-1795023455-level8_default Creating
+ Network hw3-check-1795023455-level8_default Creating
+ Network hw3-check-1795023455-level8_default Created
+ Network hw3-check-1795023455-level8_default Created
+ Container hw3-check-1795023455-level8-redis-1 Creating
+ Container hw3-check-1795023455-level8-redis-1 Created
+ Container hw3-check-1795023455-level8-app-1 Creating
+ Container hw3-check-1795023455-level8-app-1 Created
+ Container hw3-check-1795023455-level8-redis-1 Starting
+ Container hw3-check-1795023455-level8-redis-1 Started
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Starting
+ Container hw3-check-1795023455-level8-app-1 Started
+ Container hw3-check-1795023455-level8-app-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+ Container hw3-check-1795023455-level8-app-1 Healthy
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+
+$ docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Health.Status}} {{.State.StartedAt}} {{.RestartCount}}' a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d running healthy 2026-11-18T17:41:35.797251816Z 0
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml stop redis
+ Container hw3-check-1795023455-level8-redis-1 Stopping
+ Container hw3-check-1795023455-level8-redis-1 Stopped
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/healthz
+{"status": "alive"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/readyz
+{"error": "storage_unavailable"}
+HTTP 503
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
+{"error": "storage_unavailable"}
+HTTP 503
+
+$ HOST_PORT=8080 GREETING='Привет, Docker!' docker compose -p hw3-check-1795023455-level8 -f compose.yaml start --wait --wait-timeout 120 redis
+ Container hw3-check-1795023455-level8-redis-1 Starting
+ Container hw3-check-1795023455-level8-redis-1 Started
+ Container hw3-check-1795023455-level8-redis-1 Waiting
+ Container hw3-check-1795023455-level8-redis-1 Healthy
+
+$ curl --max-time 5 -sS -X GET -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/
+{"greeting": "Привет, Docker!", "count": 3, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+
+$ curl --max-time 5 -sS -X POST -w '\nHTTP %{http_code}\n' http://127.0.0.1:8080/increment
+{"greeting": "Привет, Docker!", "count": 4, "hostname": "a88c2570df46", "storage": "redis"}
+HTTP 200
+
+$ docker inspect --format '{{.Id}} {{.State.Status}} {{.State.Health.Status}} {{.State.StartedAt}} {{.RestartCount}}' a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d
+a88c2570df467520b7f47713529bb4029afa7a800843084b6771df8b872e456d running healthy 2026-11-18T17:41:35.797251816Z 0
 ```
-
-Здесь по умолчанию используется SQLite внутри контейнера. Последняя команда
-удаляет этот контейнер вместе с его локальным счётчиком.
-
-## Compose и SQLite с volume (6 баллов)
-
-Отдельный файл `compose.sqlite.yaml` демонстрирует промежуточный уровень.
-Он запускается отдельным проектом и не использует данные варианта с Redis.
-
-```sh
-HOST_PORT=8081 GREETING='Привет из SQLite!' docker compose \
-  -p hw3-sqlite -f compose.sqlite.yaml up -d --build --wait --wait-timeout 120
-curl --max-time 5 -fsS -X POST http://127.0.0.1:8081/increment
-curl --max-time 5 -fsS http://127.0.0.1:8081/
-docker compose -p hw3-sqlite -f compose.sqlite.yaml down
-HOST_PORT=8081 GREETING='Привет из SQLite!' docker compose \
-  -p hw3-sqlite -f compose.sqlite.yaml up -d --wait --wait-timeout 120
-curl --max-time 5 -fsS http://127.0.0.1:8081/
-docker compose -p hw3-sqlite -f compose.sqlite.yaml down
-```
-
-Значение счётчика сохраняется в именованном volume `sqlite-data`, который
-подключён к `/data`; файл базы — `/data/counter.db`.
-
-## Результаты проверок
-
-Команды, фактические ответы сервиса и логи контейнеров приведены в
-[REPORT.md](REPORT.md). Описание исходного API — в [app/README.md](app/README.md).
